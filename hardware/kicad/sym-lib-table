@@ -1,0 +1,1 @@
+(sym_lib_table (lib (name "AMC")(type "KiCad")(uri "${KIPRJMOD}/AMC.kicad_sym")(options "")(descr "Classic MOS and exact memory pin maps")))

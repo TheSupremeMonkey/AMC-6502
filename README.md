@@ -1,112 +1,80 @@
 # AMC-6502 (AstroMonkey Micro Computer)
 
-The **AMC-6502 (AstroMonkey Micro Computer)** is a modular, programmable 6502 single-board computer designed to operate both as a PC-tethered development tool and as an autonomous, standalone "cyberdeck."
+A for-fun classic 6502 computer developed with a terminal emulator and real assembled firmware before building hardware. The target is a compact retro desktop terminal that can also serve as an embedded controller.
 
-## Technical Specifications
+## Current state
 
-### Hardware Core
+The emulator and 64 KB ROM run Microsoft BASIC (bank 0), an idle placeholder (bank 1), Woz Monitor (bank 2), and RAM/VIA diagnostics (bank 3). Shared firmware ABI 0.4.0 provides serial, console helpers, Intel HEX RAM upload, LCD console mirroring and an independent status dashboard. The host debugger supports run/stop/step, bank-aware breakpoints and safe memory inspection. The last implementation verification passed **76 tests**.
 
-* **CPU:** W65C02S running at 1 MHz (configurable to 2, 4, or 8 MHz via clock divider).
-* **Clock Generation:** 16 MHz primary oscillator routed through a 74HC393 ripple counter for flexible clock division.
-* **RAM:** 32 KB SRAM (`$0000–$7FFF`).
-* **Upper Memory Space:** 32 KB (`$8000–$FFFF`) allocated to system I/O and bank-switched ROM.
-* **I/O Controllers:** Dual W65C22 Versatile Interface Adapters (VIA #1 and VIA #2).
-* **ROM:** 64 KB Winbond W27C512 EEPROM operating via an 8 KB hardware bank-switched window (`$E000–$FFFF`).
-* **Power & Data Interface:**
-  * USB-to-TTL 5V Serial Adapter (serves as primary data interface and main power rail).
-  * Auxiliary 5V DC power header for tetherless operation.
+A seven-sheet KiCad 9 schematic draft exists, with zero ERC violations at the last check. **PCB placement/routing, enclosure CAD, physical flashing and hardware bring-up remain to do.** Current state and next actions are in [STATUS](docs/STATUS.md) and [PLAN](docs/PLAN.md).
 
-### Display & Front Panel
+## Desktop case direction
 
-* **System Dashboard:** LCD2004 (20x4 character display) driven via an I2C backpack for real-time telemetry and active bank names.
-* **Hardware Bank Display:** 7-segment display driven directly by hardware from the ROM bank selection pins ($PA_2, PA_3$) via a 74HC4511 BCD decoder (displays `0`–`3` instantly without software overhead).
-* **Input Controls:** Front-panel tactile switch connected to VIA #1 $\text{CA}_1$ for edge-triggered interrupt-driven ROM bank cycling.
+Mostly upright LCD, leaning backward, in a compact 1970s-terminal-style 3D-printed enclosure. Bank toggles, reset and power controls sit below the LCD. The motherboard may extend below the display and use a wider bezel; **110 × 90 mm is the working placement-study envelope, not a frozen board size**. The original 98 × 60 mm LCD-sized motherboard proved crowded in a footprint-area assessment.
 
-## System Memory Map
+Retain the LCD-relative four-hole mounting pattern, custom standoffs, brass inserts and four long screws retaining the boards and removable case back. Socketed DIP ICs face the LCD on motherboard top; three full-port buses, mini bus and serial/power connection face rear-cover cutouts from motherboard bottom. Exact LCD dimensions, viewing angle, spacer heights, controls and cutouts await placement/mechanical review. See [mechanical plan](docs/PCB-MECHANICAL.md).
 
-| Address Range | Size | Allocation | Function |
-| ----- | ----- | ----- | ----- |
-| `$0000–$7FFF` | 32 KB | System RAM | Zero Page, Stack, User RAM, System Buffers |
-| `$8000–$800F` | 16 B | VIA #1 | System Controls, Bit-Bang Serial, Bank Control, LCD I2C |
-| `$8010–$801F` | 16 B | VIA #2 | Dedicated Hardware & General I/O Expansion |
-| `$8020–$DFFF` | ~24 KB | Decoding Reserve | Reserved / Unused System I/O |
-| `$E000–$FFFF` | 8 KB | EEPROM Window | **Bank-Switched ROM Area (4 x 8 KB Banks)** |
+## Development and use
 
-## EEPROM Banking Architecture
-
-The upper 8 KB address space (`$E000–$FFFF`) dynamically maps to one of four 8 KB banks inside the W27C512 EEPROM, driven by output pins $PA_2$ and $PA_3$ on VIA #1.
-
-```
-       W27C512 EEPROM (64 KB Total)
-+----------------------------------------+
-| Bank 0 (8 KB) : Microsoft BASIC        | ---> Mapped to $E000–$FFFF
-+----------------------------------------+
-| Bank 1 (8 KB) : Custom Monitor / Woz   | ---> Mapped to $E000–$FFFF
-+----------------------------------------+
-| Bank 2 (8 KB) : Standalone Cyberdeck OS| ---> Mapped to $E000–$FFFF
-+----------------------------------------+
-| Bank 3 (8 KB) : Diagnostic Suite       | ---> Mapped to $E000–$FFFF
-+----------------------------------------+
+```sh
+make setup
+make test
+make run
 ```
 
-### Bank Layout & Mirrored High Kernel
+Use `:help`, `:run`, Ctrl-C to pause, `:bank 1`–`:bank 4` for manual toggle/reset simulation, and `:reset` to retain the current bank. `:lcd mirror`, `:lcd dashboard`, `:lcd off` request display modes; `:lcd` inspects four rows. `make rom` rebuilds the image and `make schematic-check` exports/checks the KiCad draft. General tools use Ubuntu packages, cc65 stays project-local, and pinned Python dependencies live in `.venv/`. See [development setup](docs/DEVELOPMENT.md).
 
-Each 8 KB bank is strictly divided into two functional regions:
+## Hardware and implemented map
 
-1. **Lower Area (`$E000–$F7FF`, ~6 KB):**
-   * Unique payload per bank (e.g., Microsoft BASIC, Monitor Shell, Standalone Keyboard OS).
-   * Shares a standardized base entry point at `$E000` across all banks.
-2. **Shared High Kernel (`$F800–$FFFF`, ~2 KB):**
-   * **Mirrored across all 4 banks** to prevent CPU crashes during live bank swaps.
-   * Contains hardware I/O drivers (Bit-Bang Serial, I2C LCD driver).
-   * Houses the unified jump vector table (e.g., `COUT` at `$EE00`, `CIN` at `$EE03`).
-   * Contains the interrupt-driven bank-switching routine.
-   * **Bank Metadata:** Addresses `$FFE0–$FFEF` hold a fixed 16-byte null-terminated ASCII string (e.g., `"MICROSOFT BASIC"`, `"CYBERDECK OS  "`) displayed on the LCD dashboard during bank switches.
-   * **CPU Vectors:** Hardcoded vectors at `$FFFA–$FFFF` (`NMI`, `RESET`, `IRQ/BRK`).
+All ICs are DIP. Baseline is the original MOS NMOS 6502 (date code 0284) and two classic MOS 6522 VIAs at a fixed **1 MHz**, HM62256ALP-10 100 ns RAM and W27C512-45Z 64 KB ROM. The purchased active oscillator is assumed 5 V in the supplied half-size DIP8/four-lead package; no divider or selectable clock. Modern CPU substitution remains a separate experiment.
 
-## Hardware Peripheral Pinout & Expansion Headers
+| CPU range | Allocation |
+| --- | --- |
+| `$0000–$7FFF` | 32 KB physical RAM; firmware reserves workspace including top 128 bytes |
+| `$8000–$AFFF` | Six unpopulated 2 KB expansion slots; reads `$FF`, writes ignored |
+| `$B000–$B7FF` | VIA1, 16 registers repeated throughout the 2 KB block |
+| `$B800–$BFFF` | VIA2, 16 registers repeated throughout the 2 KB block |
+| `$C000–$DFFF` | Selected bank's 8 KB personality |
+| `$E000–$FFFF` | 8 KB shared firmware; only bank metadata `$FFC0–$FFDF` differs |
 
-The system breaks out a total of **4 8-bit parallel ports (32 I/O lines)** across its dual VIAs. Three full 8-bit ports remain completely uncommitted for modular expansion, with all signals exposed as clean 3-pin clusters (`Signal`, `+5V`, `GND`).
+A15 directly enables low RAM; NAND(A15,A14) enables ROM. The 74LS138 decodes the intervening 16 KB into eight 2 KB slots, with VIAs on Y6/Y7. Extra RAM remains optional and unpopulated. Two manual bank toggles supply EEPROM A14/A15. Hold RESET while changing them, then release; reset alone retains positions and RAM. `$8020` is an unpopulated expansion address, not a software selector. The retired `$E106` service returns carry set. All four ROM banks together fill the 64 KB device.
 
-### VIA #1 (`$8000–$800F`) — System Controller & Primary Display
+VIA1 PA0 is serial TX, PA1 RX, PA2 I2C SDA and PA3 SCL. PA4–PA7 plus CA1/CA2 form the 1×8 mini bus. Three 1×12 full-port buses expose VIA1 PB+CB, VIA2 PA+CA and VIA2 PB+CB. Every header includes switched +5 V/GND and uses standard 2.54 mm male through-hole pins for DuPont leads; exact numbered assignments are in [PINOUT](docs/PINOUT.md). Keyboard ownership and SD software remain deferred.
 
-* **Port A ($PA_0–PA_7$):**
-  * `$PA_0`: Serial Receive ($RX$)
-  * `$PA_1`: Serial Transmit ($TX$)
-  * `$PA_2`: ROM Bank Select Bit 0 (also wired to 74HC4511 BCD $A_0$)
-  * `$PA_3`: ROM Bank Select Bit 1 (also wired to 74HC4511 BCD $A_1$)
-  * `$PA_4`: I2C SDA (LCD2004 Dashboard Data line)
-  * `$PA_5`: I2C SCL (LCD2004 Dashboard Clock line)
-  * `$PA_6–PA_7`: Spare I/O / Status LEDs
-  * $\text{CA}_1$: Debounced pushbutton input (triggers falling-edge hardware interrupt for bank swapping)
-* **Port B ($PB_0–PB_7$):**
-  * **Broken out for I/O Expansion:** 8x 3-pin headers (`Signal`, `+5V`, `GND`).
-  * Used for scanning a matrix keyboard in Cyberdeck mode or user-defined peripherals.
+LCD is 20×4 through a PCF8574 backpack; **verify the actual 7-bit address and wiring before hardware bring-up**. `$27` is an unconfirmed development default. LCD state/buffer reserves `$7F80–$7FFF`, so BASIC and serial uploads end at `$7F7F`. Mirror mode scrolls console output; dashboard mode keeps bank/system information and an application-updated status line independent of serial. See [LCD guide](docs/LCD.md).
 
-### VIA #2 (`$8010–$801F`) — Dual Expansion Controller
+Selected power/serial interface is a six-foot FT232RL 5 V TTL USB cable. Its actual current rating and pin order remain unverified. Power/source options and USB off-state isolation are PCB work; the draft is not a validated power circuit. User owns an XGecu T48 programmer; full erase/program/readback verification remains pending. See [BOM](docs/BOM.md) and [power budget](docs/POWER-BUDGET.md).
 
-* **Port A ($PA_0–PA_7$):**
-  * **Broken out for I/O Expansion:** 8x 3-pin headers (`Signal`, `+5V`, `GND`).
-  * Uncommitted 8-bit general-purpose parallel bus with full handshake lines ($\text{CA}_1$, $\text{CA}_2$).
-* **Port B ($PB_0–PB_7$):**
-  * **Broken out for I/O Expansion:** 8x 3-pin headers (`Signal`, `+5V`, `GND`).
-  * Uncommitted 8-bit general-purpose parallel bus with full handshake lines ($\text{CB}_1$, $\text{CB}_2$).
+## Documentation index
 
-## Operating Modes
-
-1. **Development Tool Mode (PC-Tethered):**
-   * Powered and interfaced over USB-to-TTL serial adapter.
-   * Terminal interaction using PC console via unified `COUT` bit-bang vectoring.
-   * LCD dashboard displays real-time execution states ($PC$, $A$, $X$, $Y$, Status Flags).
-2. **Autonomous Cyberdeck Mode (Standalone):**
-   * Powered via 5V DC power jack or USB battery bank.
-   * Key matrix connected directly to VIA #1 Port B headers.
-   * Switch to Bank 2 (Cyberdeck OS) using the tactile bank button; interactive text renders to the LCD screen.
-
-## Software & Emulation Workflow
-
-Development follows a software-first approach prior to PCB assembly:
-
-1. **Compilation:** Assemble 6502 code using `ca65` or `vasm`.
-2. **Emulation:** Test system binaries inside a custom Python test harness (`emulator/sbc_emu.py`) that models the memory bus, VIA registers, bit-bang serial out, I2C LCD buffer, and bank switching.
-3. **Flashing:** Program the finalized 64 KB image containing all four banks onto the W27C512 via a USB EEPROM programmer (e.g., TL866II Plus).
+| Document | Purpose |
+| --- | --- |
+| [AGENTS.md](AGENTS.md) | Instructions and reading order for agents and tools |
+| [LCD console and dashboard](docs/LCD.md) | Modes, firmware API, address verification and RAM reservations |
+| [Serial RAM loader](docs/SERIAL-LOADER.md) | Intel HEX upload, sender commands, protocol, and protections |
+| [Shared firmware API](docs/FIRMWARE-API.md) | Stable vectors, calling conventions, line editor, polling, and RAM ownership |
+| [Terminal debugger](docs/DEBUGGER.md) | Run/stop, Ctrl-C pause, steps, breakpoints, registers, and RAM editing |
+| [Operating profiles](docs/OPERATING-PROFILES.md) | Planned Cyberdeck/Controller selection and port ownership |
+| [Optional keyboard planning](docs/KEYBOARD.md) | Available keyboards, Atmos preference, and optional PIO ownership |
+| [Shared firmware concept](docs/FIRMWARE-CONCEPT.md) | Proposed complete top-8-KB services, boundaries, and implementation order |
+| [Changing ROM banks](docs/ROM-SWITCHING.md) | Manual toggles, reset and emulator host controls |
+| [Bank 3 diagnostics](docs/DIAGNOSTICS.md) | Running checks, side effects, and failure coverage |
+| [Classic VIA model](docs/VIA.md) | Register/timer behavior, IRQ wiring, tests, and fidelity limits |
+| [Banked firmware](docs/FIRMWARE.md) | BASIC/Woz ROM build, terminal use, source pins, and limitations |
+| [Development setup](docs/DEVELOPMENT.md) | Prerequisites, local tools, build and test commands |
+| [Development plan](docs/PLAN.md) | Milestones and acceptance criteria |
+| [Current status](docs/STATUS.md) | Implemented work, verification, and next actions |
+| [Design decisions](docs/DECISIONS.md) | Accepted choices and rationale |
+| [SD storage proposal](docs/SD-CARD.md) | Reserved PA4–PA7 mini bus, optional 5 V SD module provision, deferred software |
+| [Planned VIA/LCD pinout](docs/PINOUT.md) | Physical VIA pins, LCD wiring and single-row expansion headers |
+| [Pre-placement schematic audit](docs/SCHEMATIC-AUDIT.md) | Core coverage, unfinished interface circuitry and physical parts to close |
+| [Address decoding](docs/ADDRESS-DECODING.md) | Corrected LS138/NAND wiring and eight 2 KB slots |
+| [Extra RAM proposal](docs/RAM-EXPANSION.md) | Possible second SRAM and smaller I/O windows; not implemented |
+| [PCB fit assessment](docs/PCB-FIT.md) | Measured DIP/socket area and placement feasibility |
+| [KiCad schematic](docs/SCHEMATIC.md) | Native project, exports, verification and open circuitry |
+| [PCB outline and LCD mounting](docs/PCB-MECHANICAL.md) | Upright desktop case, larger motherboard, LCD mounting and stack clearances |
+| [Reset circuit](docs/RESET.md) | Retro RC/Schmitt reset, manual button, parts, and board-level checks |
+| [Power budget](docs/POWER-BUDGET.md) | Estimated current draw, display allowances, and power-path sizing |
+| [Draft hardware BOM](docs/BOM.md) | Known parts, candidate quantities, compatibility checks, and decisions before buying |
+| [Hardware decoding proposal](docs/HARDWARE-PROPOSAL.md) | Historical proposal and superseded alternatives; use MACHINE for current contract |
+| [Machine contract](docs/MACHINE.md) | Working memory map, reset semantics, and open hardware questions |

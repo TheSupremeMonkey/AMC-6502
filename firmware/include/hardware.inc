@@ -1,0 +1,9 @@
+; Classic AMC-6502: eight 2 KB slots, VIAs in Y6/Y7, optional RAM unpopulated.
+.ifndef AMC_HARDWARE_INCLUDED
+AMC_HARDWARE_INCLUDED = 1
+VIA1_BASE = $b000
+VIA2_BASE = $b800
+VIA1_ORA = VIA1_BASE+1
+VIA1_DDRA = VIA1_BASE+3
+VIA1_ORA_NH = VIA1_BASE+15
+.endif

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1000" viewBox="0 0 1500 1000">
+<rect width="1500" height="1000" fill="#f7f5ef"/>
+<style>text{font-family:DejaVu Sans,sans-serif;fill:#152638;font-size:23px}.title{font-size:35px;font-weight:bold}.small{font-size:19px}.label{font-weight:bold}.wire{fill:none;stroke:#216a76;stroke-width:4;stroke-linejoin:round}.part{fill:#fff;stroke:#152638;stroke-width:3}.dot{fill:#216a76}</style>
+<text x="65" y="65" class="title">AMC-6502 · 74HC14 power-on + manual reset</text>
+<text x="65" y="105" class="small">5 V board supply · two Schmitt inverters · proposed prototype wiring (not bench-validated)</text>
+<!-- supply and charging path -->
+<path class="wire" d="M110 175 H660 M110 175 V345 H175 M285 345 H425 M535 345 H660 M660 345 H750"/>
+<text x="90" y="155" class="label">Switched +5 V</text>
+<rect class="part" x="175" y="329" width="110" height="32"/><text x="174" y="305">R1  10 kΩ</text>
+<circle class="dot" cx="345" cy="345" r="6"/>
+<rect class="part" x="425" y="329" width="110" height="32"/><text x="425" y="305">R2  1 kΩ</text>
+<text x="292" y="390" class="small">RC node</text>
+<!-- timing cap -->
+<path class="wire" d="M345 345 V467 M345 490 V625"/>
+<path d="M316 467 H374 M316 490 H374" stroke="#152638" stroke-width="4"/>
+<text x="285" y="453">+</text><text x="382" y="475">C1  10 µF</text><text x="382" y="504" class="small">electrolytic, ≥16 V</text>
+<!-- input junction and button -->
+<circle class="dot" cx="660" cy="345" r="6"/>
+<path class="wire" d="M660 345 V500 M660 556 V625"/>
+<circle cx="660" cy="500" r="5" fill="#fff" stroke="#152638" stroke-width="3"/>
+<circle cx="660" cy="556" r="5" fill="#fff" stroke="#152638" stroke-width="3"/>
+<path d="M660 552 L688 510 M700 514 V545" stroke="#152638" stroke-width="4" fill="none"/>
+<text x="715" y="523">SW1 RESET</text><text x="715" y="553" class="small">normally open</text>
+<!-- diode upper branch: symbol points up toward cathode/supply -->
+<path class="wire" d="M660 345 V258 M660 225 V175"/>
+<path class="part" d="M646 258 H674 L660 233 Z"/>
+<path d="M641 229 H679" stroke="#152638" stroke-width="5"/>
+<text x="705" y="232">D1  1N4148</text><text x="705" y="262" class="small">band/cathode toward +5 V</text>
+<circle class="dot" cx="660" cy="175" r="6"/>
+<!-- two inverter gates -->
+<path class="part" d="M750 295 V395 L833 345 Z"/><circle class="part" cx="842" cy="345" r="8"/>
+<path class="wire" d="M850 345 H950"/>
+<path class="part" d="M950 295 V395 L1033 345 Z"/><circle class="part" cx="1042" cy="345" r="8"/>
+<path class="wire" d="M1050 345 H1205 V445 M1205 345 V405 H1240 M1205 445 H1240 M1205 405 V485 H1240"/>
+<text x="765" y="280" class="label">U1A</text><text x="966" y="280" class="label">U1B</text>
+<text x="730" y="326" class="small">1</text><text x="858" y="326" class="small">2</text><text x="928" y="326" class="small">3</text><text x="1060" y="326" class="small">4</text>
+<text x="778" y="354" class="small">S</text><text x="978" y="354" class="small">S</text>
+<text x="777" y="432" class="small">Schmitt-trigger gates</text>
+<text x="1110" y="317" class="label">/RESET</text><text x="1247" y="413">6502 pin 40</text><text x="1247" y="453">6522 #1 pin 34</text><text x="1247" y="493">6522 #2 pin 34</text>
+<circle class="dot" cx="1205" cy="405" r="6"/><circle class="dot" cx="1205" cy="445" r="6"/>
+<!-- common ground -->
+<path class="wire" d="M345 625 H660 M495 625 V645"/>
+<path d="M473 645 H517 M479 653 H511 M487 661 H503" stroke="#152638" stroke-width="3"/>
+<text x="525" y="661" class="small">GND</text>
+<!-- power/bypass info panel -->
+<rect x="65" y="710" width="1370" height="230" rx="12" fill="#e6eeea"/>
+<text x="90" y="752" class="label">U1 = 74HC14, 14-pin DIP</text>
+<text x="90" y="791">Pin 14 → switched +5 V       Pin 7 → GND</text>
+<text x="90" y="830">C2: 100 nF ceramic directly between pins 14 and 7</text>
+<text x="90" y="869">Unused inputs 5, 9, 11, 13 → GND; unused outputs 6, 8, 10, 12 → unconnected</text>
+<text x="90" y="908" class="small">Button goes to the input node — never directly short pin 4 to ground. Clock keeps running during reset.</text>
+<text x="65" y="978" class="small">10 kΩ × 10 µF = 100 ms time constant; actual hold depends on thresholds, tolerance and supply ramp.</text>
+</svg>
