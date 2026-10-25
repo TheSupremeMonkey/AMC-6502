@@ -326,3 +326,14 @@ Accepted: 2026-10-24, user requests the LS138/NAND slot concept applied to the e
 Correct the supplied wiring: active-low HM62256 `/CE` is A15 directly, not inverted; LS138 pin 8 is GND and pin 7 is Y7. Existing LS00 gate D generates ROM `/CE` = NAND(A15,A14). Existing LS21 remains for PHI2/reset-qualified RAM writes, so the whole board is not described as having only two logic ICs. J2 becomes an internal 1×8 header for six spare selects/rails, not a full CPU expansion bus.
 
 Supersedes D023/D036's 4 KB VIA mapping and first-decoder ROM-output combining only; manual bank controls, ROM layout, ABI 0.4.0, LCD workspace and case choices remain. Firmware, emulator, diagnostics, schematic and tests migrate together. The prior 47 KB/two-decoder discussion remains an unselected option; current slots allow at most 12 KB future extra RAM without further decode changes. See ADDRESS-DECODING.md.
+
+## D045 — Isolated Pro Micro development bring-up
+
+Accepted: 2026-10-25, user requests a minimal PlatformIO/Arduino environment in
+`chip-tester/` and confirms the ATmega32U4 board is 16 MHz. Use the Pro Micro
+16 MHz target; voltage is not measured and USB ID alone is not clock evidence.
+Keep Python dependencies, downloaded AVR tools and build artifacts local and
+ignored. Scope is onboard blink and USB serial only; chip-testing functionality
+and external-chip setup are excluded. Stop for user action on system permissions,
+physical interaction or USB reattachment. This does not change the 6502 hardware
+contract or existing emulator workflow.

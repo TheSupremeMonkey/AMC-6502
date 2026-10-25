@@ -66,6 +66,17 @@ Acceptance: recorded physical measurements, exact fitted parts/firmware hash, re
 
 Keyboard/profile switch and two-port keyboard ownership; SD driver/card model/filesystem; classic VIA shift-register and timed handshakes; downloads/BASIC storage; further debugger tools. Implement these only when needed, using modeled hardware interfaces and bounded tests. Preserve existing firmware ABI addresses and RAM reservations in [MACHINE](MACHINE.md) and [FIRMWARE-API](FIRMWARE-API.md).
 
+## Separate Pro Micro bring-up — complete
+
+Environment setup and onboard blink/USB serial only in `chip-tester/`.
+User confirmed 16 MHz. Local PlatformIO build and dependency checks passed;
+manual-reset upload and subsequent standard automatic-reset re-upload from WSL
+verified all 4,244 flash bytes. Serial banner/heartbeats were confirmed after
+both; user confirmed LED blinking during initial bring-up. Repeatable
+WSL/usbipd commands and the Arduino Micro bootloader identity are documented.
+Chip tests and external-chip setup remain outside this milestone's scope.
+See [bring-up guide](../chip-tester/README.md).
+
 ## Optional extra RAM — deferred
 
 Current decode provides six spare 2 KB slots at `$8000–$AFFF`; no extra RAM is fitted/emulated. The optional future population could add up to 12 KB under this map. The earlier 47 KB/two-decoder proposal is not selected. See [RAM-EXPANSION.md](RAM-EXPANSION.md).

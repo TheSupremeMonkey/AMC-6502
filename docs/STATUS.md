@@ -1,6 +1,28 @@
 # Current status
 
-Last reconciled: 2026-10-24. Accepted requirements, implemented behavior and open choices are separated below. Historical alternatives remain in [DECISIONS](DECISIONS.md).
+Last reconciled: 2026-10-25. Accepted requirements, implemented behavior and open choices are separated below. Historical alternatives remain in [DECISIONS](DECISIONS.md).
+
+## Separate Pro Micro development environment
+
+`chip-tester/` provides isolated, pinned PlatformIO Core 6.2.0 / AVR platform
+5.3.0 and Arduino blink/USB serial firmware. User confirmed 16 MHz; voltage is
+unmeasured. Build passed: **4,244 bytes flash, 165 bytes RAM**. Python dependency
+checks passed. Added `brad` to `dialout` with user authorization.
+
+Manual-reset upload from WSL succeeded: avrdude identified ATmega32U4 signature
+`0x1e9587` and verified all 4,244 flash bytes. USB serial banner and six sequential
+heartbeats were captured on `/dev/ttyACM0`, about 1.001–1.002 seconds apart.
+User confirmed the onboard LED blinking. No external-chip setup or chip tests.
+
+Standard PlatformIO re-upload with automatic 1200-baud reset subsequently
+passed in **6.21 seconds**, verifying all 4,244 flash bytes without manual reset.
+Serial banner and three heartbeats were verified again afterward. Keep usbipd
+`--auto-attach` on Windows bus `1-9` running, with the user-created AutoBind rule for
+**Arduino Micro bootloader `2341:0037`**. Sketch ID is SparkFun `1b4f:9206`;
+the initial SparkFun-only bootloader assumption was insufficient. The helper
+`upload-bootloader.py` and manual double reset remain a verified fallback.
+No bootloader replacement was needed. Bring-up scope is complete; further tester development
+requires a new user request. See [guide](../chip-tester/README.md).
 
 ## Working software
 

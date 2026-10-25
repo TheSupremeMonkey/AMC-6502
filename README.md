@@ -49,6 +49,7 @@ Selected power/serial interface is a six-foot FT232RL 5 V TTL USB cable. Its act
 
 | Document | Purpose |
 | --- | --- |
+| [Pro Micro bring-up](chip-tester/README.md) | Isolated PlatformIO environment; WSL upload/readback, USB serial and onboard blink verified |
 | [AGENTS.md](AGENTS.md) | Instructions and reading order for agents and tools |
 | [LCD console and dashboard](docs/LCD.md) | Modes, firmware API, address verification and RAM reservations |
 | [Serial RAM loader](docs/SERIAL-LOADER.md) | Intel HEX upload, sender commands, protocol, and protections |
